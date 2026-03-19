@@ -23,21 +23,21 @@ func InitLogger(serviceName string) *slog.Logger {
 
 	handlerOpts := &slog.HandlerOptions{
 		Level: slog.LevelDebug,
-		// ReplaceAttr allows us to customize the order and display of default fields
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			// 1. Format the Timestamp
+			// 1. Format Time
 			if a.Key == slog.TimeKey {
 				return slog.String("time", a.Value.Time().Format("2006-01-02 15:04:05"))
 			}
 
-			// 2. Inject Service Name right before/with the Level
+			// 2. Remove 'level' key and replace it with 'srv' + 'level'
+			// but as a single string to avoid slog.Group recursion
 			if a.Key == slog.LevelKey {
-				// We return a "Group" with no name.
-				// TextHandler will print these attributes in order.
-				return slog.Group("",
-					slog.String("srv", serviceName),
-					slog.Attr(a), // This is the original Level attribute
-				)
+				// This makes the output look like: ... srv=AuthSrv level=INFO ...
+				// by injecting the srv field into the metadata flow safely
+				return slog.Attr{
+					Key:   "srv",
+					Value: slog.StringValue(fmt.Sprintf("%s level=%s", serviceName, a.Value.String())),
+				}
 			}
 			return a
 		},
