@@ -25,12 +25,19 @@ func InitLogger(serviceName string) *slog.Logger {
 		Level: slog.LevelDebug,
 		// ReplaceAttr allows us to customize the order and display of default fields
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			// 1. Format the Timestamp
 			if a.Key == slog.TimeKey {
-				// Use .Time() to get the time.Time object
-				t := a.Value.Time()
+				return slog.String("time", a.Value.Time().Format("2006-01-02 15:04:05"))
+			}
 
-				// Return a new attribute with your custom string format
-				return slog.String("time", t.Format("2006-01-02 15:04:05"))
+			// 2. Inject Service Name right before/with the Level
+			if a.Key == slog.LevelKey {
+				// We return a "Group" with no name.
+				// TextHandler will print these attributes in order.
+				return slog.Group("",
+					slog.String("srv", serviceName),
+					slog.Attr(a), // This is the original Level attribute
+				)
 			}
 			return a
 		},
