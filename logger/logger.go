@@ -45,11 +45,7 @@ func InitLogger(serviceName string) *slog.Logger {
 
 	w := io.MultiWriter(os.Stdout, file)
 
-	// Create the base logger
-	baseHandler := slog.NewTextHandler(w, handlerOpts)
-
-	// Use .With() so the service name always appears immediately after the level/time
-	logger := slog.New(baseHandler).With("src", serviceName)
+	logger := slog.New(slog.NewTextHandler(w, handlerOpts))
 	slog.SetDefault(logger)
 	return logger
 }
